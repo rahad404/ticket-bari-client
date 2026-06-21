@@ -10,6 +10,26 @@ export const auth = betterAuth({
    database: mongodbAdapter(db, {
       client
    }),
+
+   // Configure the user model with additional fields
+   user: {
+      additionalFields: {
+         // role field
+         role: {
+            type: "string",
+            input: true,
+            required: false,
+            defaultValue: "user", 
+         },
+         // isFraud field
+         isFraud: {
+            type: "boolean",
+            required: false,
+            defaultValue: false, // Automatically saves as false for every new registration
+         },
+      }
+   },
+
    emailAndPassword: {
       enabled: true,
       autoSignIn: false,
@@ -20,6 +40,8 @@ export const auth = betterAuth({
          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       },
    },
+
+
    // jwt implement
    session: {
       cookieCache: {
