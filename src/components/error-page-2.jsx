@@ -1,7 +1,7 @@
 'use client';
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, LifeBuoy } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { PlaneTakeoff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -58,10 +58,12 @@ const ErrorPage2 = () => {
 
          {/* Right Tech Canvas Side */}
          <div className='relative hidden xl:block'>
+            {/*  FIXED: Starts with a direct slash pointing straight to public/assets/ */}
             <img
-               src='../assets/error.jpeg'
-               alt='placeholder image'
-               className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.95] ' />
+               src='/assets/error.jpeg'
+               alt='Page not found illustration'
+               className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.95]' 
+            />
          </div>
       </div>
    );

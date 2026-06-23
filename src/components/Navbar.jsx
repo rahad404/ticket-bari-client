@@ -92,6 +92,9 @@ export function Navbar() {
                   <DropdownMenu>
                      <DropdownMenuTrigger asChild>
                         <button className="flex items-center space-x-3 focus:outline-none hover:opacity-90 transition">
+                           <span className="text-sm font-medium text-foreground">
+                              {user?.name}
+                           </span>
                            <Avatar className="h-9 w-9 rounded-full">
                               <AvatarImage
                                  referrerPolicy="no-referrer"
@@ -102,12 +105,9 @@ export function Navbar() {
                                  {user?.name?.[0]?.toUpperCase()}
                               </AvatarFallback>
                            </Avatar>
-                           <span className="text-sm font-medium text-foreground">
-                              {user?.name}
-                           </span>
                         </button>
                      </DropdownMenuTrigger>
-                     
+
                      <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
@@ -118,7 +118,7 @@ export function Navbar() {
                            </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                            className="text-destructive focus:text-destructive cursor-pointer flex items-center gap-2"
                            onClick={handleLogout}
                         >
@@ -142,7 +142,7 @@ export function Navbar() {
             {/* Mobile View Toggle / Burger Menu */}
             <div className="flex md:hidden items-center gap-2">
                <ModeToggle />
-               
+
                <Button
                   variant="ghost"
                   size="icon"
@@ -157,7 +157,7 @@ export function Navbar() {
          {/* Mobile Menu Dropdown */}
          {isOpen && (
             <div className="md:hidden border-b bg-background px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-5 duration-200">
-               
+
                {/* Mobile Nav Links */}
                <div className="flex flex-col space-y-3">
                   {publicLinks.map((link) => (
