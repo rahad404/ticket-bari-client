@@ -31,7 +31,7 @@ export function Navbar() {
    // Public links: Home and All Tickets
    const publicLinks = [
       { label: "Home", href: "/" },
-      { label: "All Tickets", href: "/tickets" },
+      { label: "All Tickets", href: "/all-tickets" },
    ];
 
    // Private link: Dashboard (only visible when logged in)
