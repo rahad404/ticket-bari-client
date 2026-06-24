@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { CheckCircle2, XCircle, AlertCircle, Calendar, ShieldAlert, Bus, Train, Plane, Ship, Ticket } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Calendar, Loader2, Bus, Train, Plane, Ship, Ticket } from 'lucide-react';
 
 export default function ManageTickets() {
    const [tickets, setTickets] = useState([]);
@@ -20,17 +20,31 @@ export default function ManageTickets() {
          setLoading(true);
          const { data: { token: jwtToken } } = await authClient.token();
 
-         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tickets/admin`, {
+         if (!jwtToken) {
+            throw new Error('Authentication session token is missing. Please sign in again.');
+         }
+
+         const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/tickets/admin`;
+         console.log("Fetching admin tickets from:", apiUrl); // Debug log to verify URL shape
+
+         const response = await fetch(apiUrl, {
+            method: 'GET',
             headers: {
                'Authorization': `Bearer ${jwtToken}`,
+               'Content-Type': 'application/json'
             },
          });
 
-         if (!response.ok) throw new Error('Could not pull centralized ticket roster lists.');
+         if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(`Server returned ${response.status}: ${errorDetails || 'Could not fetch central data.'}`);
+         }
+         
          const data = await response.json();
-         setTickets(data);
+         // Safety check to ensure data is an iterable array
+         setTickets(Array.isArray(data) ? data : []);
       } catch (error) {
-         console.error(error);
+         console.error("Frontend fetch global tickets error:", error);
          toast.error('Data Pull Interrupted', { description: error.message });
       } finally {
          setLoading(false);
@@ -47,7 +61,6 @@ export default function ManageTickets() {
       try {
          const { data: { token: jwtToken } } = await authClient.token();
 
-         // Corresponds directly with requirement 8b validation endpoints
          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tickets/verify/${ticketId}`, {
             method: 'PATCH',
             headers: {
@@ -67,7 +80,7 @@ export default function ManageTickets() {
          });
 
          // Refresh tabular records state matching backend properties
-         fetchGlobalTickets();
+         await fetchGlobalTickets();
       } catch (error) {
          console.error(error);
          toast.error('Action Failed', { description: error.message });
@@ -88,7 +101,7 @@ export default function ManageTickets() {
    };
 
    const getTransportIcon = (type) => {
-      switch (type) {
+      switch (type?.toLowerCase()) {
          case 'bus': return <Bus className="h-3.5 w-3.5 text-blue-500" />;
          case 'train': return <Train className="h-3.5 w-3.5 text-orange-500" />;
          case 'air': case 'plane': return <Plane className="h-3.5 w-3.5 text-purple-500" />;
@@ -151,19 +164,19 @@ export default function ManageTickets() {
                         </TableHeader>
                         <TableBody>
                            {tickets.map((ticket) => {
-                              const isPending = ticket.verificationStatus === 'pending' || !ticket.verificationStatus;
-                              const isActioning = processingId === ticket._id;
+                              const ticketId = ticket._id || ticket.id; // Support fallback id fields smoothly
+                              const isActioning = processingId === ticketId;
 
                               return (
-                                 <TableRow key={ticket._id} className="hover:bg-muted/20 transition-colors">
+                                 <TableRow key={ticketId} className="hover:bg-muted/20 transition-colors">
 
                                     {/* Title & Fleet Info Column */}
                                     <TableCell className="py-3 max-w-[200px]">
                                        <div className="flex flex-col">
-                                          <span className="font-bold text-foreground line-clamp-1 text-sm">{ticket.title}</span>
+                                          <span className="font-bold text-foreground line-clamp-1 text-sm">{ticket.title || 'Untitled Ticket'}</span>
                                           <span className="text-[11px] text-muted-foreground capitalize flex items-center gap-1 mt-0.5">
                                              {getTransportIcon(ticket.transportType)}
-                                             {ticket.transportType} Package
+                                             {ticket.transportType || 'Standard'} Package
                                           </span>
                                        </div>
                                     </TableCell>
@@ -171,9 +184,9 @@ export default function ManageTickets() {
                                     {/* Travel Corridor Map Column */}
                                     <TableCell className="py-3">
                                        <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                          <span className="text-foreground bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{ticket.from}</span>
+                                          <span className="text-foreground bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{ticket.from || 'N/A'}</span>
                                           <span className="text-muted-foreground font-normal">→</span>
-                                          <span className="text-primary bg-primary/5 border border-primary/10 px-1.5 py-0.5 rounded">{ticket.to}</span>
+                                          <span className="text-primary bg-primary/5 border border-primary/10 px-1.5 py-0.5 rounded">{ticket.to || 'N/A'}</span>
                                        </div>
                                     </TableCell>
 
@@ -182,7 +195,7 @@ export default function ManageTickets() {
                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                           <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" />
                                           <span className="truncate max-w-[140px] font-medium">
-                                             {new Date(ticket.departureDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                             {ticket.departureDateTime ? new Date(ticket.departureDateTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Flexible'}
                                           </span>
                                        </div>
                                     </TableCell>
@@ -190,8 +203,8 @@ export default function ManageTickets() {
                                     {/* Finance and Capacity Allocation Column */}
                                     <TableCell className="py-3 text-right">
                                        <div className="flex flex-col items-end">
-                                          <span className="font-black text-foreground text-sm">${ticket.price?.toFixed(2)}</span>
-                                          <span className="text-[11px] text-muted-foreground font-medium">{ticket.quantity} Allocations</span>
+                                          <span className="font-black text-foreground text-sm">${ticket.price ? Number(ticket.price).toFixed(2) : '0.00'}</span>
+                                          <span className="text-[11px] text-muted-foreground font-medium">{ticket.quantity ?? 0} Allocations</span>
                                        </div>
                                     </TableCell>
 
@@ -208,10 +221,11 @@ export default function ManageTickets() {
                                              size="sm"
                                              variant="outline"
                                              disabled={isActioning || ticket.verificationStatus === 'approved'}
-                                             onClick={() => updateVerificationStatus(ticket._id, 'approved')}
+                                             onClick={() => updateVerificationStatus(ticketId, 'approved')}
                                              className="h-7 text-[11px] font-bold px-2.5 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-950/20 disabled:opacity-40"
                                           >
-                                             <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+                                             {isActioning && processingId === ticketId ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle2 className="h-3 w-3 mr-1" />} 
+                                             Approve
                                           </Button>
 
                                           {/* Reject Button */}
@@ -219,10 +233,11 @@ export default function ManageTickets() {
                                              size="sm"
                                              variant="outline"
                                              disabled={isActioning || ticket.verificationStatus === 'rejected'}
-                                             onClick={() => updateVerificationStatus(ticket._id, 'rejected')}
+                                             onClick={() => updateVerificationStatus(ticketId, 'rejected')}
                                              className="h-7 text-[11px] font-bold px-2.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20 disabled:opacity-40"
                                           >
-                                             <XCircle className="h-3 w-3 mr-1" /> Reject
+                                             {isActioning && processingId === ticketId ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <XCircle className="h-3 w-3 mr-1" />} 
+                                             Reject
                                           </Button>
                                        </div>
                                     </TableCell>
