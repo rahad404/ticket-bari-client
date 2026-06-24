@@ -1,15 +1,16 @@
-import HeroSection, { JobHero } from "@/components/hero-section";
+import HeroSection from "@/components/hero-section";
 import PopularRoutes from "@/components/popular-routs";
-import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/ui/modetoggle";
+import LatestTickets from "@/components/latest-tickets";
+import AdvertisedTickets from "@/components/advertised-tickets";
 import WhyChooseUs from "@/components/why-choose-us";
-import Image from "next/image";
 
 export default function Home() {
   return (
     <div>
       <HeroSection />
       <PopularRoutes />
+      <LatestTickets />
+      <AdvertisedTickets />
       <WhyChooseUs />
     </div>
   );
