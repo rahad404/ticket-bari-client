@@ -40,46 +40,6 @@ export default function DashboardLayout({ children }) {
 
          {/* Main Container */}
          <div className="flex flex-col flex-1 overflow-hidden">
-
-            {/* Global Dashboard Header */}
-            <header className="flex h-16 items-center justify-between border-b px-4 md:px-6 bg-card">
-               <div className="flex items-center gap-4">
-
-                  {/* Mobile Drawer (Sheet) */}
-                  <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-                     <SheetTrigger asChild>
-                        <Button
-                           variant="ghost"
-                           size="icon"
-                           className="md:hidden"
-                           aria-label="Open Menu"
-                        >
-                           <Menu className="w-5 h-5" />
-                        </Button>
-                     </SheetTrigger>
-                     <SheetContent side="left" className="p-0 w-64">
-                        {/* Optional: Pass down close handler if your navigation links inside Aside need to shut the mobile drawer */}
-                        <Aside closeMobileMenu={() => setIsMobileOpen(false)} />
-                     </SheetContent>
-                  </Sheet>
-
-                  <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
-               </div>
-
-               {/* User Profile Action / Status */}
-               <div className="flex items-center gap-4">
-                  <Avatar className="w-8 h-8 border">
-                     <AvatarImage
-                        src={session.user.image || undefined}
-                        alt={session.user.name || "User avatar"}
-                     />
-                     <AvatarFallback className="bg-muted text-muted-foreground text-xs font-medium">
-                        {session.user.name?.charAt(0).toUpperCase() || "U"}
-                     </AvatarFallback>
-                  </Avatar>
-               </div>
-            </header>
-
             {/* Scrollable Viewport Content */}
             <main className="flex-1 overflow-y-auto p-4 md:p-6 focus:outline-none">
                {children}

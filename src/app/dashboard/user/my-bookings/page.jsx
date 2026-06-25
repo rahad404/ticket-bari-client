@@ -199,8 +199,7 @@ export default function MyBookedTickets() {
                                  <span>Qty: <strong>{booking.bookingQuantity}</strong></span>
                               </div>
                               <div className="flex items-center gap-1 font-bold text-primary">
-                                 <DollarSign className="h-3.5 w-3.5" />
-                                 <span>${Number(booking.totalPrice || booking.unitPrice * booking.bookingQuantity).toFixed(2)}</span>
+                                 <span>৳{Number(booking.totalPrice || booking.unitPrice * booking.bookingQuantity).toFixed(2)}</span>
                               </div>
                            </div>
 
