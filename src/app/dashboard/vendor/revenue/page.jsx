@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Ticket, Users, DollarSign, ShoppingCart, TrendingUp, Package, AlertCircle, Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
 const COLORS = {
    emerald: '#10b981',
@@ -18,10 +18,45 @@ const COLORS = {
 
 const PIE_COLORS = ['#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
 
+// ---------------------------------------------------------------------------
+// Hook: watches the `dark` class on <html> so chart colours update instantly
+// when the user toggles the theme without needing a page reload.
+// ---------------------------------------------------------------------------
+function useDarkMode() {
+   const [isDark, setIsDark] = useState(false);
+
+   useEffect(() => {
+      const html = document.documentElement;
+      // Initial read
+      setIsDark(html.classList.contains('dark'));
+
+      const observer = new MutationObserver(() => {
+         setIsDark(html.classList.contains('dark'));
+      });
+      observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+      return () => observer.disconnect();
+   }, []);
+
+   return isDark;
+}
+
 export default function VendorRevenue() {
    const { data: session } = authClient.useSession();
    const [stats, setStats] = useState(null);
    const [loading, setLoading] = useState(true);
+   const isDark = useDarkMode();
+
+   // ------------------------------------------------------------------
+   // Theme-aware colour tokens for Recharts elements.
+   // These mirror the CSS custom-properties defined in globals.css so
+   // the charts always match the current shadcn/ui theme.
+   // ------------------------------------------------------------------
+   const tickColor      = isDark ? '#a1a1aa' : '#71717a';   // zinc-400 / zinc-500
+   const gridColor      = isDark ? '#27272a' : '#e4e4e7';   // zinc-800 / zinc-200
+   const tooltipBg      = isDark ? '#09090b' : '#ffffff';   // zinc-950 / white
+   const tooltipBorder  = isDark ? '#27272a' : '#e4e4e7';
+   const tooltipText    = isDark ? '#fafafa'  : '#09090b';  // zinc-50  / zinc-950
+   const axisLineColor  = isDark ? '#3f3f46' : '#d4d4d8';   // zinc-700 / zinc-300
 
    useEffect(() => {
       const fetchStats = async () => {
@@ -88,6 +123,42 @@ export default function VendorRevenue() {
       revenue: d.revenue,
       tickets: d.ticketsSold,
    }));
+
+   // Shared tooltip style – passed to every <Tooltip /> so all charts
+   // look consistent and readable in both light and dark modes.
+   const tooltipStyle = {
+      contentStyle: {
+         background:    tooltipBg,
+         border:        `1px solid ${tooltipBorder}`,
+         borderRadius:  '8px',
+         fontSize:      '13px',
+         color:         tooltipText,
+      },
+      labelStyle:  { color: tooltipText, fontWeight: 600 },
+      itemStyle:   { color: tickColor },
+   };
+
+   // Custom label renderer for the Pie chart – gives us full control over
+   // text colour so it isn't stuck on Recharts' default dark grey.
+   const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent }) => {
+      const RADIAN = Math.PI / 180;
+      const radius = innerRadius + (outerRadius - innerRadius) * 1.45;
+      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+      return (
+         <text
+            x={x}
+            y={y}
+            fill={tickColor}
+            textAnchor={x > cx ? 'start' : 'end'}
+            dominantBaseline="central"
+            fontSize={12}
+            fontWeight={500}
+         >
+            {`${name} ${(percent * 100).toFixed(0)}%`}
+         </text>
+      );
+   };
 
    return (
       <div className="space-y-6 p-2">
@@ -163,16 +234,21 @@ export default function VendorRevenue() {
                   <div className="h-72">
                      <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={ticketsData} barSize={60}>
-                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                           <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
-                           <YAxis tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" />
+                           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                           <XAxis
+                              dataKey="name"
+                              stroke={axisLineColor}
+                              tick={{ fontSize: 12, fill: tickColor }}
+                           />
+                           <YAxis
+                              stroke={axisLineColor}
+                              tick={{ fontSize: 12, fill: tickColor }}
+                           />
                            <Tooltip
-                              contentStyle={{
-                                 background: 'hsl(var(--popover))',
-                                 border: '1px solid hsl(var(--border))',
-                                 borderRadius: '8px',
-                                 fontSize: '13px',
-                              }}
+                              contentStyle={tooltipStyle.contentStyle}
+                              labelStyle={tooltipStyle.labelStyle}
+                              itemStyle={tooltipStyle.itemStyle}
+                              cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }}
                            />
                            <Bar dataKey="tickets" radius={[6, 6, 0, 0]}>
                               {ticketsData.map((entry, index) => (
@@ -212,20 +288,22 @@ export default function VendorRevenue() {
                                  outerRadius={90}
                                  paddingAngle={4}
                                  dataKey="value"
-                                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                                  labelLine={false}
+                                 label={renderPieLabel}
                               >
                                  {bookingStatusData.map((_, index) => (
                                     <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                                  ))}
                               </Pie>
                               <Tooltip
-                                 contentStyle={{
-                                    background: 'hsl(var(--popover))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '8px',
-                                    fontSize: '13px',
-                                 }}
+                                 contentStyle={tooltipStyle.contentStyle}
+                                 labelStyle={tooltipStyle.labelStyle}
+                                 itemStyle={tooltipStyle.itemStyle}
+                              />
+                              <Legend
+                                 formatter={(value) => (
+                                    <span style={{ color: tickColor, fontSize: 12 }}>{value}</span>
+                                 )}
                               />
                            </PieChart>
                         </ResponsiveContainer>
@@ -249,18 +327,35 @@ export default function VendorRevenue() {
                   <div className="h-72">
                      <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={dailyData}>
-                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                           <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                           <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
-                           <Tooltip
-                              contentStyle={{
-                                 background: 'hsl(var(--popover))',
-                                 border: '1px solid hsl(var(--border))',
-                                 borderRadius: '8px',
-                                 fontSize: '13px',
-                              }}
+                           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                           <XAxis
+                              dataKey="date"
+                              stroke={axisLineColor}
+                              tick={{ fontSize: 11, fill: tickColor }}
                            />
-                           <Line type="monotone" dataKey="revenue" stroke={COLORS.emerald} strokeWidth={2} dot={{ fill: COLORS.emerald, r: 4 }} name="Revenue ($)" />
+                           <YAxis
+                              stroke={axisLineColor}
+                              tick={{ fontSize: 11, fill: tickColor }}
+                           />
+                           <Tooltip
+                              contentStyle={tooltipStyle.contentStyle}
+                              labelStyle={tooltipStyle.labelStyle}
+                              itemStyle={tooltipStyle.itemStyle}
+                           />
+                           <Legend
+                              formatter={(value) => (
+                                 <span style={{ color: tickColor, fontSize: 12 }}>{value}</span>
+                              )}
+                           />
+                           <Line
+                              type="monotone"
+                              dataKey="revenue"
+                              stroke={COLORS.emerald}
+                              strokeWidth={2}
+                              dot={{ fill: COLORS.emerald, r: 4 }}
+                              activeDot={{ r: 6, fill: COLORS.emerald }}
+                              name="Revenue ($)"
+                           />
                         </LineChart>
                      </ResponsiveContainer>
                   </div>
