@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const menuItems = {
    user: [
       { name: "Profile", href: "/dashboard/user/profile", icon: User },
-      { name: "My Bookings", href: "/dashboard/user/bookings", icon: Ticket },
+      { name: "My Bookings", href: "/dashboard/user/my-bookings", icon: Ticket },
       { name: "Transactions", href: "/dashboard/user/transactions", icon: DollarSign },
    ],
    vendor: [

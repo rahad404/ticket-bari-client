@@ -116,11 +116,11 @@ export function Navbar() {
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                            <Link href={profileUrl} className="cursor-pointer flex items-center gap-2">
-                               <User className="h-4 w-4" />
-                               <span>My Profile</span>
-                            </Link>
-                         </DropdownMenuItem>
+                           <Link href={profileUrl} className="cursor-pointer flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span>My Profile</span>
+                           </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                            className="text-destructive focus:text-destructive cursor-pointer flex items-center gap-2"
@@ -213,11 +213,11 @@ export function Navbar() {
                         </div>
 
                         <Link href={profileUrl} onClick={() => setIsOpen(false)}>
-                            <Button variant="outline" className="w-full justify-start gap-2">
-                               <User className="h-4 w-4" />
-                               My Profile
-                            </Button>
-                         </Link>
+                           <Button variant="outline" className="w-full justify-start gap-2">
+                              <User className="h-4 w-4" />
+                              My Profile
+                           </Button>
+                        </Link>
 
                         <Button
                            variant="destructive"
