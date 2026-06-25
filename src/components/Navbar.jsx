@@ -34,11 +34,15 @@ export function Navbar() {
       { label: "All Tickets", href: "/all-tickets" },
    ];
 
-   // Private link: Dashboard (only visible when logged in)
-   const privateLink = { label: "Dashboard", href: "/dashboard" };
-
    const { data: session } = authClient.useSession();
    const user = session?.user;
+   const role = user?.role || "user";
+
+   const dashboardBase = `/dashboard/${role}`;
+   const profileUrl = `${dashboardBase}/profile`;
+
+   // Private link: Dashboard (only visible when logged in)
+   const privateLink = { label: "Dashboard", href: dashboardBase };
 
    const handleLogout = async () => {
       await authClient.signOut();
@@ -112,11 +116,11 @@ export function Navbar() {
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                           <Link href="/profile" className="cursor-pointer flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              <span>My Profile</span>
-                           </Link>
-                        </DropdownMenuItem>
+                            <Link href={profileUrl} className="cursor-pointer flex items-center gap-2">
+                               <User className="h-4 w-4" />
+                               <span>My Profile</span>
+                            </Link>
+                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                            className="text-destructive focus:text-destructive cursor-pointer flex items-center gap-2"
@@ -208,12 +212,12 @@ export function Navbar() {
                            </div>
                         </div>
 
-                        <Link href="/profile" onClick={() => setIsOpen(false)}>
-                           <Button variant="outline" className="w-full justify-start gap-2">
-                              <User className="h-4 w-4" />
-                              My Profile
-                           </Button>
-                        </Link>
+                        <Link href={profileUrl} onClick={() => setIsOpen(false)}>
+                            <Button variant="outline" className="w-full justify-start gap-2">
+                               <User className="h-4 w-4" />
+                               My Profile
+                            </Button>
+                         </Link>
 
                         <Button
                            variant="destructive"
