@@ -222,7 +222,7 @@ export default function VendorRevenue() {
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* Tickets Added vs Sold */}
-            <Card className="shadow-sm">
+            <Card className="shadow-sm bg-gray-300">
                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                      <TrendingUp className="h-4 w-4 text-primary" />
@@ -262,7 +262,7 @@ export default function VendorRevenue() {
             </Card>
 
             {/* Booking Status Distribution */}
-            <Card className="shadow-sm">
+            <Card className="shadow-sm bg-gray-300">
                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                      <ShoppingCart className="h-4 w-4 text-primary" />
@@ -315,7 +315,7 @@ export default function VendorRevenue() {
 
          {/* Daily Revenue Chart (last 7 days) */}
          {dailyData.length > 0 && (
-            <Card className="shadow-sm">
+            <Card className="shadow-sm bg-gray-300">
                <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                      <TrendingUp className="h-4 w-4 text-primary" />
