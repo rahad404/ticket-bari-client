@@ -38,7 +38,7 @@ export function LoginForm({ className, ...props }) {
    };
 
    const handleGoogleLogin = async () => {
-      const data = await authClient.signIn.social({
+      const { data, error } = await authClient.signIn.social({
          provider: "google",
       });
       if (data) {
