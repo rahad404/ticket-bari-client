@@ -29,6 +29,11 @@ const Images = [
       title: 'BD Airline – Buy Plane Tickets for Domestic and International Flights',
       category: 'Buy Launch Tickets',
    },
+   {
+      image: '/assets/all.png',
+      title: 'Stay hassle free – Buy Tickets for All Destinations and Services',
+      category: 'Buy Any Tickets',
+   },
 ]
 
 
