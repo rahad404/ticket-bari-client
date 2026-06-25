@@ -1,11 +1,11 @@
 # TicketBari – Online Ticket Booking Platform
 
 ### **Programming Hero | Assignment-10 | CAT_05**
-* **Project Name:** TicketBari – Ticket Booking System (Frontend)  
-* **Server GitHub Repository:** [https://github.com/rahad404/ticket-bari-server](#)
-* **Client GitHub Repository:** [https://github.com/rahad404/ticket-bari-client](#)
-* **Client Live Site:** [https://ticket-bari-client-tan.vercel.app/](#)  
-* **Server Live Site:** [https://ticket-bari-server-seven.vercel.app/](#)  
+* **Project Name:** TicketBari – Ticket Booking System (Backend)  
+* **Server GitHub Repository:** [https://github.com/rahad404/ticket-bari-server](https://github.com/rahad404/ticket-bari-server)
+* **Client GitHub Repository:** [https://github.com/rahad404/ticket-bari-client](https://github.com/rahad404/ticket-bari-client)
+* **Client Live Site:** [https://ticket-bari-client-tan.vercel.app/](https://ticket-bari-client-tan.vercel.app/)  
+* **Server Live Site:** [https://ticket-bari-server-seven.vercel.app/](https://ticket-bari-server-seven.vercel.app/)  
 ---
 
 ## Project Description
