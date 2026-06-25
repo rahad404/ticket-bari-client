@@ -10,21 +10,27 @@ import {
 
 const Images = [
    {
-      image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600',
-      title: 'Flexible Learning That Fits Your Schedule',
-      category: '',
+      image: 'https://grandsylhet.com/wp-content/uploads/2025/01/Jaflong-Beauty-1024x538.webp',
+      title: "Sylhet – Buy Bus Tickets for Sylhet and Other Destinations",
+      category: 'Buy Bus Tickets',
    },
    {
-      image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600',
-      title: 'Secure Your Session Instantly',
-      category: '',
+      image: 'https://www.tbsnews.net/sites/default/files/styles/infograph/public/images/2023/11/06/01_view_32_1_0.jpg',
+      title: "Cox's Bazar – Buy Train Tickets for Cox's Bazar and Other Destinations",
+      category: 'Buy Train Tickets',
    },
    {
-      image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600',
-      title: 'Learn Smarter With Expert Tutors',
-      category: '',
+      image: 'https://thumbs.dreamstime.com/b/launch-bangladesh-sadar-ghat-launch-bangladesh-sadar-ghat-233454714.jpg',
+      title: 'River Launch – Buy Launch Tickets for River Cruises',
+      category: 'Buy Launch Tickets',
+   },
+   {
+      image: 'https://c8.alamy.com/zooms/9/b8c519652be0477b9036c6b2b4a18356/2gm43jx.jpg',
+      title: 'BD Airline – Buy Plane Tickets for Domestic and International Flights',
+      category: 'Buy Launch Tickets',
    },
 ]
+
 
 /* tuned sizes */
 const R = 220
