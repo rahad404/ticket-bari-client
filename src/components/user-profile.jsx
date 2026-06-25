@@ -29,6 +29,21 @@ export default function UserProfile({ user }) {
       }
    });
 
+   // Fetch a fresh session from the server when the profile page is mounted
+   // and whenever the tab regains focus. This ensures isFraud / role changes
+   // made by an admin are visible here immediately.
+   useEffect(() => {
+      authClient.getSession({ fetchOptions: { cache: 'no-store' } });
+
+      const handleVisibilityChange = () => {
+         if (document.visibilityState === 'visible') {
+            authClient.getSession({ fetchOptions: { cache: 'no-store' } });
+         }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+   }, []);
+
    // Sync react-hook-form fields cleanly whenever the user context loads or updates
    useEffect(() => {
       if (currentUser) {
@@ -38,6 +53,7 @@ export default function UserProfile({ user }) {
          setImagePreview(currentUser.image || null);
       }
    }, [currentUser, reset]);
+
 
    const handleFileChange = (e) => {
       const file = e.target.files[0];

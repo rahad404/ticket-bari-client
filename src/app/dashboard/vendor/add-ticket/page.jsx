@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,20 @@ export default function AddTicket({ user }) {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [imagePreview, setImagePreview] = useState(null);
    const [selectedImageFile, setSelectedImageFile] = useState(null);
+
+   // Re-fetch session from server on mount and on tab focus to ensure isFraud
+   // status is always current (admin may have flagged this vendor as fraud).
+   useEffect(() => {
+      authClient.getSession({ fetchOptions: { cache: 'no-store' } });
+
+      const handleVisibilityChange = () => {
+         if (document.visibilityState === 'visible') {
+            authClient.getSession({ fetchOptions: { cache: 'no-store' } });
+         }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+   }, []);
 
    const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm({
       defaultValues: {

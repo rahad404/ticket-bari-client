@@ -44,10 +44,11 @@ export const auth = betterAuth({
 
    // jwt implement
    session: {
+      // cookieCache disabled: we want every session check to hit the DB
+      // so that admin changes to role/isFraud are reflected immediately
+      // without requiring users to logout/login or manually save their profile.
       cookieCache: {
-         enabled: true,
-         // strategy: "jwt",
-         maxAge: 7 * 24 * 60 * 60
+         enabled: false,
       }
    },
    plugins: [

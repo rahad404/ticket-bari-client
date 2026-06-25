@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client"; // Adjust this path to match your Better Auth client instance
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,24 @@ export default function DashboardLayout({ children }) {
    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
    // Better Auth client session hook
-   const { data: session, isPending, error } = authClient.useSession();
+   const { data: session, isPending, error, refetch } = authClient.useSession();
+
+   // Re-validate session from the server every time the browser tab becomes visible.
+   // This ensures that admin-side changes (e.g. marking a vendor as fraud, changing roles)
+   // are reflected on the vendor/user side without requiring a manual reload or re-login.
+   useEffect(() => {
+      const handleVisibilityChange = () => {
+         if (document.visibilityState === "visible") {
+            // Force a fresh session fetch from the server (bypasses any client-side cache)
+            authClient.getSession({ fetchOptions: { cache: "no-store" } });
+         }
+      };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => {
+         document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+   }, []);
 
    // Handle loading state smoothly with a Lucide spinner
    if (isPending) {

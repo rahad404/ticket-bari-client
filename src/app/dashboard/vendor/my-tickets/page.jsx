@@ -34,6 +34,20 @@ export default function MyAddedTickets({ user }) {
    const { register, handleSubmit, setValue, watch, reset } = useForm();
    const selectedPerks = watch('perks') || [];
 
+   // Re-fetch session on mount and on tab focus so that admin-applied changes
+   // (e.g. fraud flag, role change) immediately appear for the vendor.
+   useEffect(() => {
+      authClient.getSession({ fetchOptions: { cache: 'no-store' } });
+
+      const handleVisibilityChange = () => {
+         if (document.visibilityState === 'visible') {
+            authClient.getSession({ fetchOptions: { cache: 'no-store' } });
+         }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+   }, []);
+
    // Fetch Vendor's specific tickets
    const fetchTickets = async () => {
       if (!currentUser?.email) return;
@@ -60,6 +74,7 @@ export default function MyAddedTickets({ user }) {
    useEffect(() => {
       fetchTickets();
    }, [currentUser?.email]);
+
 
    // Handle Edit Prep (Populate React Hook Form defaults)
    const openEditModal = (ticket) => {
