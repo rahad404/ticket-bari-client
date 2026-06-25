@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bus, Train, Plane, Ship, Calendar, MapPin, Eye, Search, AlertCircle, Ticket, Users, DollarSign } from 'lucide-react';
+import { Bus, Train, Plane, Ship, Calendar, MapPin, Eye, Search, AlertCircle, Ticket, Users, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PERK_LABELS = {
@@ -31,39 +31,86 @@ const getTransportBadge = (type) => {
          return <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/30 dark:text-teal-400"><Ship className="h-3 w-3 mr-1" />Launch</Badge>;
    }
 };
+const ITEMS_PER_PAGE = 6;
 
 export default function AllTicketsPage() {
    const [tickets, setTickets] = useState([]);
    const [loading, setLoading] = useState(true);
+   const [totalCount, setTotalCount] = useState(0);
+   const [page, setPage] = useState(1);
    const [search, setSearch] = useState('');
+   const [from, setFrom] = useState('');
+   const [to, setTo] = useState('');
    const [transportType, setTransportType] = useState('all');
    const [sort, setSort] = useState('');
 
-   const fetchTickets = useCallback(async (searchTerm, type, sortBy) => {
+   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
+
+   const fetchTickets = useCallback(async (searchTerm, fromTerm, toTerm, type, sortBy, pageNum) => {
       try {
          setLoading(true);
          const params = new URLSearchParams();
          if (searchTerm?.trim()) params.set('search', searchTerm.trim());
+         if (fromTerm?.trim()) params.set('from', fromTerm.trim());
+         if (toTerm?.trim()) params.set('to', toTerm.trim());
          if (type && type !== 'all') params.set('transportType', type);
          if (sortBy) params.set('sort', sortBy);
+         params.set('page', String(pageNum));
+         params.set('limit', String(ITEMS_PER_PAGE));
 
-         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tickets?${params.toString()}`);
-         if (!response.ok) throw new Error('Failed to fetch tickets');
-         const data = await response.json();
+         const [ticketsRes, countRes] = await Promise.all([
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/tickets?${params.toString()}`),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/tickets-count?${params.toString()}`),
+         ]);
+
+         if (!ticketsRes.ok) throw new Error('Failed to fetch tickets');
+         if (!countRes.ok) throw new Error('Failed to fetch count');
+
+         const data = await ticketsRes.json();
+         const { count } = await countRes.json();
          setTickets(Array.isArray(data) ? data : []);
+         setTotalCount(count ?? 0);
       } catch (error) {
          console.error(error);
          toast.error('Failed to load tickets');
          setTickets([]);
+         setTotalCount(0);
       } finally {
          setLoading(false);
       }
    }, []);
 
    useEffect(() => {
-      const timer = setTimeout(() => fetchTickets(search, transportType, sort), 400);
+      const timer = setTimeout(() => fetchTickets(search, from, to, transportType, sort, page), 400);
       return () => clearTimeout(timer);
-   }, [search, transportType, sort, fetchTickets]);
+   }, [search, from, to, transportType, sort, page, fetchTickets]);
+
+   const handlePageChange = (newPage) => {
+      if (newPage < 1 || newPage > totalPages) return;
+      setPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+   };
+
+   const handleSearchChange = (val) => {
+      setSearch(val);
+      setPage(1);
+   };
+   const handleFromChange = (val) => {
+      setFrom(val);
+      setPage(1);
+   };
+   const handleToChange = (val) => {
+      setTo(val);
+      setPage(1);
+   };
+   const handleTransportChange = (val) => {
+      setTransportType(val);
+      setPage(1);
+   };
+   const handleSortChange = (val) => {
+      setSort(val);
+      setPage(1);
+   };
 
    return (
       <div className="min-h-svh py-8 px-4 md:px-6 max-w-7xl mx-auto space-y-6">
@@ -72,38 +119,45 @@ export default function AllTicketsPage() {
             <p className="text-muted-foreground text-sm">Browse approved transport tickets from our verified vendors.</p>
          </div>
 
-         <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-               <Input
-                  placeholder="Search by route or title..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-               />
+         <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+               <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search by title..." value={search} onChange={(e) => handleSearchChange(e.target.value)} className="pl-9" />
+               </div>
+               <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="From (location)..." value={from} onChange={(e) => handleFromChange(e.target.value)} className="pl-9" />
+               </div>
+               <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="To (location)..." value={to} onChange={(e) => handleToChange(e.target.value)} className="pl-9" />
+               </div>
+               <div className="flex gap-3">
+                  <Select value={transportType} onValueChange={handleTransportChange}>
+                     <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Transport Type" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="bus">Bus</SelectItem>
+                        <SelectItem value="train">Train</SelectItem>
+                        <SelectItem value="air">Flight</SelectItem>
+                        <SelectItem value="launch">Launch</SelectItem>
+                     </SelectContent>
+                  </Select>
+                  <Select value={sort} onValueChange={handleSortChange}>
+                     <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Sort by" />
+                     </SelectTrigger>
+                     <SelectContent>
+                        <SelectItem value="">Latest</SelectItem>
+                        <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                        <SelectItem value="price_desc">Price: High to Low</SelectItem>
+                     </SelectContent>
+                  </Select>
+               </div>
             </div>
-            <Select value={transportType} onValueChange={setTransportType}>
-               <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Transport Type" />
-               </SelectTrigger>
-               <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="bus">Bus</SelectItem>
-                  <SelectItem value="train">Train</SelectItem>
-                  <SelectItem value="air">Flight</SelectItem>
-                  <SelectItem value="launch">Launch</SelectItem>
-               </SelectContent>
-            </Select>
-            <Select value={sort} onValueChange={setSort}>
-               <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Sort by" />
-               </SelectTrigger>
-               <SelectContent>
-                  <SelectItem value="">Latest</SelectItem>
-                  <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                  <SelectItem value="price_desc">Price: High to Low</SelectItem>
-               </SelectContent>
-            </Select>
          </div>
 
          {loading ? (
@@ -137,72 +191,89 @@ export default function AllTicketsPage() {
                <p className="text-sm text-muted-foreground max-w-sm mt-1">Try adjusting your search or filter criteria to find available tickets.</p>
             </div>
          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-               {tickets.map((ticket) => (
-                  <Card key={ticket._id} className="overflow-hidden flex flex-col">
-                     <div className="aspect-[16/9] relative overflow-hidden bg-muted">
-                        {ticket.imageUrl ? (
-                           <img
-                              src={ticket.imageUrl}
-                              alt={ticket.title}
-                              className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
-                           />
-                        ) : (
-                           <div className="flex items-center justify-center h-full text-muted-foreground">
-                              <Ticket className="h-12 w-12 opacity-30" />
-                           </div>
-                        )}
-                     </div>
-                     <CardContent className="flex-1 p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                           <h3 className="font-bold text-base leading-tight line-clamp-1">{ticket.title || 'Untitled Ticket'}</h3>
-                           {getTransportBadge(ticket.transportType)}
+            <>
+               <p className="text-sm text-muted-foreground">{totalCount} ticket{totalCount !== 1 ? 's' : ''} found</p>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {tickets.map((ticket) => (
+                     <Card key={ticket._id} className="overflow-hidden flex flex-col">
+                        <div className="aspect-[16/9] relative overflow-hidden bg-muted">
+                           {ticket.imageUrl ? (
+                              <img src={ticket.imageUrl} alt={ticket.title} className="object-cover w-full h-full hover:scale-105 transition-transform duration-300" />
+                           ) : (
+                              <div className="flex items-center justify-center h-full text-muted-foreground">
+                                 <Ticket className="h-12 w-12 opacity-30" />
+                              </div>
+                           )}
                         </div>
-
-                        <div className="flex items-center gap-1.5 text-sm">
-                           <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                           <span className="font-medium">{ticket.from || 'N/A'}</span>
-                           <span className="text-muted-foreground">→</span>
-                           <span className="font-medium text-primary">{ticket.to || 'N/A'}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                           <Calendar className="h-3.5 w-3.5 shrink-0" />
-                           <span>{ticket.departureDateTime ? new Date(ticket.departureDateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Flexible'}</span>
-                        </div>
-
-                        {ticket.perks?.length > 0 && (
-                           <div className="flex flex-wrap gap-1">
-                              {ticket.perks.map((perk) => (
-                                 <Badge key={perk} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
-                                    {PERK_LABELS[perk] || perk}
-                                 </Badge>
-                              ))}
+                        <CardContent className="flex-1 p-4 space-y-3">
+                           <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-bold text-base leading-tight line-clamp-1">{ticket.title || 'Untitled Ticket'}</h3>
+                              {getTransportBadge(ticket.transportType)}
                            </div>
-                        )}
+                           <div className="flex items-center gap-1.5 text-sm">
+                              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="font-medium">{ticket.from || 'N/A'}</span>
+                              <span className="text-muted-foreground">→</span>
+                              <span className="font-medium text-primary">{ticket.to || 'N/A'}</span>
+                           </div>
+                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />
+                              <span>{ticket.departureDateTime ? new Date(ticket.departureDateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Flexible'}</span>
+                           </div>
+                           {ticket.perks?.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                 {ticket.perks.map((perk) => (
+                                    <Badge key={perk} variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
+                                       {PERK_LABELS[perk] || perk}
+                                    </Badge>
+                                 ))}
+                              </div>
+                           )}
+                           <div className="flex items-center justify-between pt-2 border-t">
+                              <div>
+                                 <span className="text-lg font-bold">${ticket.price ? Number(ticket.price).toFixed(2) : '0.00'}</span>
+                                 <span className="text-xs text-muted-foreground ml-1">/ seat</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                 <Users className="h-3.5 w-3.5" />
+                                 <span>{ticket.quantity ?? 0} left</span>
+                              </div>
+                           </div>
+                        </CardContent>
+                        <CardFooter className="p-4 pt-0">
+                           <Link href={`/all-tickets/${ticket._id}`} className="w-full">
+                              <Button variant="default" className="w-full cursor-pointer">
+                                 <Eye className="h-4 w-4 mr-2" />
+                                 See Details
+                              </Button>
+                           </Link>
+                        </CardFooter>
+                     </Card>
+                  ))}
+               </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t">
-                           <div>
-                              <span className="text-lg font-bold">${ticket.price ? Number(ticket.price).toFixed(2) : '0.00'}</span>
-                              <span className="text-xs text-muted-foreground ml-1">/ seat</span>
-                           </div>
-                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Users className="h-3.5 w-3.5" />
-                              <span>{ticket.quantity ?? 0} left</span>
-                           </div>
-                        </div>
-                     </CardContent>
-                     <CardFooter className="p-4 pt-0">
-                        <Link href={`/all-tickets/${ticket._id}`} className="w-full">
-                           <Button variant="default" className="w-full cursor-pointer">
-                              <Eye className="h-4 w-4 mr-2" />
-                              See Details
-                           </Button>
-                        </Link>
-                     </CardFooter>
-                  </Card>
-               ))}
-            </div>
+               {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => handlePageChange(page - 1)}>
+                        <ChevronLeft className="h-4 w-4" />
+                     </Button>
+                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                        <Button
+                           key={p}
+                           variant={p === page ? 'default' : 'outline'}
+                           size="sm"
+                           className="min-w-9"
+                           onClick={() => handlePageChange(p)}
+                        >
+                           {p}
+                        </Button>
+                     ))}
+                     <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => handlePageChange(page + 1)}>
+                        <ChevronRight className="h-4 w-4" />
+                     </Button>
+                  </div>
+               )}
+            </>
          )}
       </div>
    );

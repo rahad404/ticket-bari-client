@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { Calendar, MapPin, Clock, AlertCircle, Ticket, Users, DollarSign, Ban, Loader2, ShoppingCart, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, MapPin, Clock, AlertCircle, Ticket, Users, DollarSign, Ban, Loader2, ShoppingCart, CheckCircle2, XCircle, Trash2, Download } from 'lucide-react';
 
 function Countdown({ targetDate }) {
    const [timeLeft, setTimeLeft] = useState(null);
@@ -43,11 +43,72 @@ function Countdown({ targetDate }) {
    );
 }
 
+function downloadTicketPdf(booking) {
+   const { jsPDF } = require('jspdf');
+   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+   const pageW = doc.internal.pageSize.getWidth();
+
+   doc.setFillColor(15, 118, 110);
+   doc.rect(0, 0, pageW, 35, 'F');
+
+   doc.setTextColor(255, 255, 255);
+   doc.setFontSize(18);
+   doc.setFont('helvetica', 'bold');
+   doc.text('TICKET BARI', pageW / 2, 16, { align: 'center' });
+
+   doc.setFontSize(10);
+   doc.setFont('helvetica', 'normal');
+   doc.text('e-Ticket Confirmation', pageW / 2, 26, { align: 'center' });
+
+   doc.setTextColor(0, 0, 0);
+   doc.setFontSize(14);
+   doc.setFont('helvetica', 'bold');
+   doc.text(booking.ticketTitle || 'Transport Ticket', pageW / 2, 50, { align: 'center' });
+
+   const leftX = 15;
+   let y = 62;
+
+   doc.setFontSize(10);
+   doc.setFont('helvetica', 'normal');
+   const items = [
+   { label: 'From', value: booking.from || 'N/A' },
+   { label: 'To', value: booking.to || 'N/A' },
+   { label: 'Departure', value: booking.departureDateTime ? new Date(booking.departureDateTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Flexible' },
+   { label: 'Passenger', value: booking.userName || booking.userEmail || 'N/A' },
+   { label: 'Quantity', value: String(booking.bookingQuantity) },
+   { label: 'Unit Price', value: `$${Number(booking.unitPrice || 0).toFixed(2)}` },
+   { label: 'Total Paid', value: `$${Number(booking.totalPrice || 0).toFixed(2)}` },
+   { label: 'Status', value: booking.status || 'N/A' },
+   { label: 'Booking ID', value: booking._id || 'N/A' },
+   ];
+
+   items.forEach((item) => {
+   doc.setFont('helvetica', 'bold');
+   doc.text(item.label + ':', leftX, y);
+   doc.setFont('helvetica', 'normal');
+   doc.text(String(item.value), leftX + 35, y);
+   y += 8;
+   });
+
+   y += 8;
+   doc.setFontSize(8);
+   doc.setTextColor(100, 100, 100);
+   doc.setFont('helvetica', 'italic');
+   doc.text('Thank you for choosing Ticket Bari. Have a safe journey!', pageW / 2, y, { align: 'center' });
+
+   doc.setFontSize(7);
+   doc.text('Ticket Bari - Online Ticket Booking Platform', pageW / 2, y + 6, { align: 'center' });
+
+   const filename = `ticket-${booking._id?.slice(-6) || 'download'}.pdf`;
+   doc.save(filename);
+}
+
 export default function MyBookedTickets() {
    const { data: session } = authClient.useSession();
    const [bookings, setBookings] = useState([]);
    const [loading, setLoading] = useState(true);
    const [payingId, setPayingId] = useState(null);
+   const [cancellingId, setCancellingId] = useState(null);
 
    const fetchBookings = async () => {
       if (!session?.user?.email) return;
@@ -99,6 +160,28 @@ export default function MyBookedTickets() {
          toast.error('Payment failed', { description: error.message });
       } finally {
          setPayingId(null);
+      }
+   };
+
+   const handleCancel = async (bookingId) => {
+      setCancellingId(bookingId);
+      try {
+         const { data: { token: jwtToken } } = await authClient.token();
+         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings/${bookingId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${jwtToken}` },
+         });
+         if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.message || 'Failed to cancel booking');
+         }
+         toast.success('Booking cancelled successfully');
+         await fetchBookings();
+      } catch (error) {
+         console.error(error);
+         toast.error('Failed to cancel', { description: error.message });
+      } finally {
+         setCancellingId(null);
       }
    };
 
@@ -163,6 +246,8 @@ export default function MyBookedTickets() {
                   const expired = isExpired(booking.departureDateTime);
                   const canPay = booking.status === 'accepted' && !expired;
                   const isPaying = payingId === booking._id;
+                  const isCancelling = cancellingId === booking._id;
+                  const canCancel = booking.status === 'pending';
 
                   return (
                      <Card key={booking._id} className="overflow-hidden flex flex-col hover:shadow-md transition-shadow border border-muted group">
@@ -199,7 +284,7 @@ export default function MyBookedTickets() {
                                  <span>Qty: <strong>{booking.bookingQuantity}</strong></span>
                               </div>
                               <div className="flex items-center gap-1 font-bold text-primary">
-                                 <span>৳{Number(booking.totalPrice || booking.unitPrice * booking.bookingQuantity).toFixed(2)}</span>
+                                 <span>${Number(booking.totalPrice || booking.unitPrice * booking.bookingQuantity).toFixed(2)}</span>
                               </div>
                            </div>
 
@@ -209,9 +294,21 @@ export default function MyBookedTickets() {
                               </div>
                            )}
                         </CardContent>
-                        <CardFooter className="p-4 pt-0">
+                        <CardFooter className="p-4 pt-0 flex flex-col gap-2">
                            {booking.status === 'pending' && (
-                              <p className="text-xs text-muted-foreground w-full text-center py-1">Awaiting vendor confirmation</p>
+                              <>
+                                 <p className="text-xs text-muted-foreground w-full text-center py-1">Awaiting vendor confirmation</p>
+                                 <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20"
+                                    disabled={isCancelling}
+                                    onClick={() => handleCancel(booking._id)}
+                                 >
+                                    {isCancelling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Trash2 className="h-3.5 w-3.5 mr-1.5" />}
+                                    Cancel Booking
+                                 </Button>
+                              </>
                            )}
                            {booking.status === 'accepted' && (
                               <Button
@@ -230,9 +327,20 @@ export default function MyBookedTickets() {
                               </Button>
                            )}
                            {booking.status === 'paid' && (
-                              <Badge className="w-full justify-center bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-none text-xs py-1.5">
-                                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Payment Complete
-                              </Badge>
+                              <>
+                                 <Badge className="w-full justify-center bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border-none text-xs py-1.5">
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Payment Complete
+                                 </Badge>
+                                 <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-xs"
+                                    onClick={() => downloadTicketPdf(booking)}
+                                 >
+                                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                                    Download Ticket PDF
+                                 </Button>
+                              </>
                            )}
                            {booking.status === 'rejected' && (
                               <Badge variant="destructive" className="w-full justify-center text-xs py-1.5">

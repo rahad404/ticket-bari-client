@@ -60,7 +60,7 @@ export default function ManageUsersClient() {
       }
    };
 
-   const handleMarkFraud = async (userId) => {
+   const handleToggleFraud = async (userId) => {
       setProcessingId(userId);
       try {
          const { data: { token: jwtToken } } = await authClient.token();
@@ -70,9 +70,9 @@ export default function ManageUsersClient() {
          });
          if (!response.ok) {
             const errData = await response.json();
-            throw new Error(errData.message || 'Failed to mark as fraud');
+            throw new Error(errData.message || 'Failed to toggle fraud status');
          }
-         toast.success('Vendor Marked as Fraud', { description: 'All tickets by this vendor are now hidden.' });
+         toast.success('Fraud status updated');
          await fetchUsers();
       } catch (error) {
          console.error(error);
@@ -173,36 +173,36 @@ export default function ManageUsersClient() {
                                           </Badge>
                                        )}
                                     </TableCell>
-                                    <TableCell className="py-3 text-center">
-                                       <div className="flex items-center justify-center gap-2">
-                                          <Button size="sm" variant="outline"
-                                             disabled={isProcessing || isAdmin || isSelf || isFraud}
-                                             onClick={() => handleRoleChange(user._id, 'admin')}
-                                             className="h-7 text-[11px] font-bold px-2.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20 disabled:opacity-40"
-                                          >
-                                             {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3 mr-1" />}
-                                             Make Admin
-                                          </Button>
-                                          <Button size="sm" variant="outline"
-                                             disabled={isProcessing || isVendor || isSelf || isFraud}
-                                             onClick={() => handleRoleChange(user._id, 'vendor')}
-                                             className="h-7 text-[11px] font-bold px-2.5 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-950/20 disabled:opacity-40"
-                                          >
-                                             {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3 mr-1" />}
-                                             Make Vendor
-                                          </Button>
-                                          {isVendor && (
-                                             <Button size="sm" variant="outline"
-                                                disabled={isProcessing || isFraud}
-                                                onClick={() => handleMarkFraud(user._id)}
-                                                className="h-7 text-[11px] font-bold px-2.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20 disabled:opacity-40"
-                                             >
-                                                {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldAlert className="h-3 w-3 mr-1" />}
-                                                {isFraud ? 'Fraudulent' : 'Mark as Fraud'}
-                                             </Button>
-                                          )}
-                                       </div>
-                                    </TableCell>
+                               <TableCell className="py-3 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                     <Button size="sm" variant="outline"
+                                        disabled={isProcessing || isAdmin || isSelf}
+                                        onClick={() => handleRoleChange(user._id, 'admin')}
+                                        className="h-7 text-[11px] font-bold px-2.5 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20 disabled:opacity-40"
+                                     >
+                                        {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3 w-3 mr-1" />}
+                                        Make Admin
+                                     </Button>
+                                     <Button size="sm" variant="outline"
+                                        disabled={isProcessing || isVendor || isSelf}
+                                        onClick={() => handleRoleChange(user._id, 'vendor')}
+                                        className="h-7 text-[11px] font-bold px-2.5 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-950/20 disabled:opacity-40"
+                                     >
+                                        {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3 mr-1" />}
+                                        Make Vendor
+                                     </Button>
+                                     {isVendor && (
+                                        <Button size="sm" variant={isFraud ? 'default' : 'outline'}
+                                           disabled={isProcessing}
+                                           onClick={() => handleToggleFraud(user._id)}
+                                           className={`h-7 text-[11px] font-bold px-2.5 ${isFraud ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-950/40 dark:text-red-400 dark:hover:bg-red-950/20'} disabled:opacity-40`}
+                                        >
+                                           {isProcessing ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldAlert className="h-3 w-3 mr-1" />}
+                                           {isFraud ? 'Remove Fraud' : 'Mark as Fraud'}
+                                        </Button>
+                                     )}
+                                  </div>
+                               </TableCell>
                                  </TableRow>
                               );
                            })}
